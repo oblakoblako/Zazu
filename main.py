@@ -26,23 +26,30 @@ def send_sms(phone, text, sender="INFO"):
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
-    raw = request.data.decode("utf-8")
-    print("=== RAW BODY ===")
-    print(raw[:3000])  # первые 3000 символов
-
     data = request.get_json(silent=True)
-    print("=== TOP LEVEL KEYS ===")
-    if data:
-        print(list(data.keys()))
-        for key in data.keys():
-            val = data[key]
-            print(f"  {key}: {type(val).__name__} = {str(val)[:200]}")
-    
-    return jsonify({"status": "logged"}), 200
+    if not data:
+        return jsonify({"error": "no json"}), 400
 
-@app.route("/", methods=["GET"])
-def health():
-    return jsonify({"status": "running"}), 200
+    # Телефон из contact.phone
+    contact = data.get("contact", {})
+    phone = contact.get("phone") if isinstance(contact, dict) else None
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080)
+    # SMS текст из call.agreements.smsText
+    call = data.get("call", {})
+    if isinstance(call, dict):
+        agreements = call.get("agreements", {})
+        if isinstance(agreements, dict):
+            text = agreements.get("smsText")
+        else:
+            text = None
+    else:
+        text = None
+
+    # Запасной вариант если smsText пустой
+    if not text:
+        text = "Спасибо за звонок! Мы свяжемся с вами в ближайшее время."
+
+    print(f"phone: {phone}, text: {text}")
+
+    if not phone:
+        return jsonify({"error": "phone not found", "contact":
