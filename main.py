@@ -6,14 +6,12 @@ app = Flask(__name__)
 
 ZMTECH_ID = os.environ.get("ZMTECH_ID", "140067")
 ZMTECH_KEY = os.environ.get("ZMTECH_KEY", "ff2c5ae62e9f1d2615a1150d4962152aaaafbeb9")
-ZMTECH_LOGIN = os.environ.get("ZMTECH_LOGIN", "89826872043")
-ZMTECH_PASSWORD = os.environ.get("ZMTECH_PASSWORD", "9ix-JMa-2rE-En7")
 ZMTECH_URL = "http://api.zmtech.ru:7777/v1/brand"
 
 def send_sms(phone, text, sender="INFO"):
     payload = {
-        "id": ZMTECH_LOGIN,
-        "password": ZMTECH_PASSWORD,
+        "id": ZMTECH_ID,
+        "password": ZMTECH_KEY,
         "pack": [
             {
                 "phone": phone,
