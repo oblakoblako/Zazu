@@ -26,25 +26,20 @@ def send_sms(phone, text, sender="INFO"):
 @app.route("/webhook", methods=["POST"])
 def webhook():
     data = request.get_json(silent=True)
-    raw = request.data.decode("utf-8")
-    
-    # Логируем что пришло от Sasha AI
-    print("=== INCOMING WEBHOOK ===")
-    print("RAW:", raw)
-    print("JSON:", data)
-    
-    if not data:
-        return jsonify({"error": "no json", "raw": raw}), 400
 
-    # Пробуем разные возможные поля с номером телефона
-    phone = (data.get("phone") or data.get("contact_phone") or 
-             data.get("lead_phone") or data.get("number") or
-             data.get("client_phone"))
-    text = (data.get("message") or data.get("text") or 
-            data.get("sms_text") or "Вам перезвонят")
+    if not data:
+        return jsonify({"error": "no json"}), 400
+
+    # Поля от Sasha AI
+    phone = data.get("destination_phone")
+    text = data.get("smsText")
+
+    print(f"phone: {phone}, text: {text}")
 
     if not phone:
-        return jsonify({"error": "phone not found", "received_data": data}), 400
+        return jsonify({"error": "destination_phone not found"}), 400
+    if not text:
+        return jsonify({"error": "smsText not found"}), 400
 
     result = send_sms(phone, text)
     return jsonify(result), 200
