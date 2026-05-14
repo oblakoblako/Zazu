@@ -1,12 +1,23 @@
 from flask import Flask, request, jsonify
 import requests
 import os
+import json
 
 app = Flask(__name__)
 
 ZMTECH_ID = os.environ.get("ZMTECH_ID", "140067")
 ZMTECH_KEY = os.environ.get("ZMTECH_KEY", "ff2c5ae62e9f1d2615a1150d4962152aaaafbeb9")
 ZMTECH_URL = "http://api.zmtech.ru:7777/v1/brand"
+
+def parse_field(value):
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str):
+        try:
+            return json.loads(value)
+        except Exception:
+            return {}
+    return {}
 
 def send_sms(phone, text, sender="INFO"):
     payload = {
@@ -30,11 +41,8 @@ def webhook():
     if not data:
         return jsonify({"error": "no json"}), 400
 
-    print("FULL DATA:", data)
-
-    # Достаём phone — пробуем разные уровни вложенности
-    call_details = data.get("callDetails", {})
-    agreements = data.get("agreements", {})
+    call_details = parse_field(data.get("callDetails", {}))
+    agreements = parse_field(data.get("agreements", {}))
 
     phone = (
         call_details.get("destination_phone") or
@@ -52,9 +60,9 @@ def webhook():
     print(f"phone: {phone}, text: {text}")
 
     if not phone:
-        return jsonify({"error": "phone not found", "data": data}), 400
+        return jsonify({"error": "phone not found"}), 400
     if not text:
-        return jsonify({"error": "smsText not found", "data": data}), 400
+        return jsonify({"error": "smsText not found"}), 400
 
     result = send_sms(phone, text)
     return jsonify(result), 200
