@@ -30,16 +30,31 @@ def webhook():
     if not data:
         return jsonify({"error": "no json"}), 400
 
-    # Поля от Sasha AI
-    phone = data.get("destination_phone")
-    text = data.get("smsText")
+    print("FULL DATA:", data)
+
+    # Достаём phone — пробуем разные уровни вложенности
+    call_details = data.get("callDetails", {})
+    agreements = data.get("agreements", {})
+
+    phone = (
+        call_details.get("destination_phone") or
+        data.get("destination_phone") or
+        data.get("phone")
+    )
+
+    text = (
+        agreements.get("smsText") or
+        data.get("smsText") or
+        data.get("text") or
+        data.get("message")
+    )
 
     print(f"phone: {phone}, text: {text}")
 
     if not phone:
-        return jsonify({"error": "destination_phone not found"}), 400
+        return jsonify({"error": "phone not found", "data": data}), 400
     if not text:
-        return jsonify({"error": "smsText not found"}), 400
+        return jsonify({"error": "smsText not found", "data": data}), 400
 
     result = send_sms(phone, text)
     return jsonify(result), 200
