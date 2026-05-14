@@ -9,16 +9,6 @@ ZMTECH_ID = os.environ.get("ZMTECH_ID", "140067")
 ZMTECH_KEY = os.environ.get("ZMTECH_KEY", "ff2c5ae62e9f1d2615a1150d4962152aaaafbeb9")
 ZMTECH_URL = "http://api.zmtech.ru:7777/v1/brand"
 
-def parse_field(value):
-    if isinstance(value, dict):
-        return value
-    if isinstance(value, str):
-        try:
-            return json.loads(value)
-        except Exception:
-            return {}
-    return {}
-
 def send_sms(phone, text, sender="INFO"):
     payload = {
         "id": ZMTECH_ID,
@@ -36,36 +26,19 @@ def send_sms(phone, text, sender="INFO"):
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
+    raw = request.data.decode("utf-8")
+    print("=== RAW BODY ===")
+    print(raw[:3000])  # первые 3000 символов
+
     data = request.get_json(silent=True)
-
-    if not data:
-        return jsonify({"error": "no json"}), 400
-
-    call_details = parse_field(data.get("callDetails", {}))
-    agreements = parse_field(data.get("agreements", {}))
-
-    phone = (
-        call_details.get("destination_phone") or
-        data.get("destination_phone") or
-        data.get("phone")
-    )
-
-    text = (
-        agreements.get("smsText") or
-        data.get("smsText") or
-        data.get("text") or
-        data.get("message")
-    )
-
-    print(f"phone: {phone}, text: {text}")
-
-    if not phone:
-        return jsonify({"error": "phone not found"}), 400
-    if not text:
-        return jsonify({"error": "smsText not found"}), 400
-
-    result = send_sms(phone, text)
-    return jsonify(result), 200
+    print("=== TOP LEVEL KEYS ===")
+    if data:
+        print(list(data.keys()))
+        for key in data.keys():
+            val = data[key]
+            print(f"  {key}: {type(val).__name__} = {str(val)[:200]}")
+    
+    return jsonify({"status": "logged"}), 200
 
 @app.route("/", methods=["GET"])
 def health():
